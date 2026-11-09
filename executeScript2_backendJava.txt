@@ -1,0 +1,30 @@
+docker rm -f project-board
+
+docker run -p 3306:3306 --name project-board \
+  -e MYSQL_ROOT_PASSWORD="root" \
+  -e MYSQL_USER=uno \
+  -e MYSQL_PASSWORD="uno" \
+  -e MYSQL_DATABASE=board \
+  -d mysql:latest
+
+docker rm -f project-board
+
+docker exec -i -t a86d639ad2bd  /bin/bash
+
+mysql -uroot -p
+
+select user from mysql.user;
+SHOW GRANTS FOR 'uno'@'%';
+
+grant all on `board`.* to `uno`@`%` with grant option;
+
+flush privileges;
+
+./gradlew clean build -x test
+
+chmod +x run-local.sh
+
+./run-local.sh
+
+
+
