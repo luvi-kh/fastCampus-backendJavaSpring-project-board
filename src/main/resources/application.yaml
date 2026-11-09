@@ -5,7 +5,12 @@ logging:
   level:
     com.fastcampus.projectboard: debug
     org.springframework.web.servlet: debug
-    org.hibernate.type.descriptor.sql.BasicBinder: trace
+    # 1. [스프링 부트 3.x / 하이버네이트 6 필수] 물음표 자리에 바인딩된 실제 파라미터 값을 추적합니다.
+    org.hibernate.orm.jdbc.bind: trace
+    # 2. SQL 실행 관련 트랜잭션 에러 상세 분석용 로그
+    org.springframework.orm.jpa: debug
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
 
 spring:
   application.name: project-board
@@ -36,6 +41,9 @@ spring:
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/kakao"
             client-authentication-method: client_secret_post
+            # 👇 이 옵션을 추가하면 Spring이 알아서 인가 요청 주소 뒤에 안전하게 파라미터를 조립해 줍니다.
+            provider-parameters:
+              prompt: select_account
         provider:
           kakao:
             authorization-uri: https://kauth.kakao.com/oauth/authorize

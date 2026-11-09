@@ -5,7 +5,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
-@SuppressWarnings("unchecked") // TODO: Map -> Object 변환 로직이 있어 제네릭 타입 캐스팅 문제를 무시한다. 더 좋은 방법이 있다면 고려할 수 있음.
+@SuppressWarnings("unchecked")
 public record KakaoOAuth2Response(
         Long id,
         LocalDateTime connectedAt,
@@ -23,11 +23,18 @@ public record KakaoOAuth2Response(
     ) {
         public record Profile(String nickname) {
             public static Profile from(Map<String, Object> attributes) {
+                if (attributes == null) return new Profile("카카오유저");
                 return new Profile(String.valueOf(attributes.get("nickname")));
             }
         }
 
         public static KakaoAccount from(Map<String, Object> attributes) {
+            if (attributes == null) return new KakaoAccount(true, new Profile("카카오유저"), false, true, false, false, null);
+
+            // 💡 [핵심 교정] String.valueOf(null)이 "null" 문자열이 되는 버그를 완벽히 차단합니다.
+            Object rawEmail = attributes.get("email");
+            String resolvedEmail = (rawEmail == null) ? null : String.valueOf(rawEmail);
+
             return new KakaoAccount(
                     Boolean.valueOf(String.valueOf(attributes.get("profile_nickname_needs_agreement"))),
                     Profile.from((Map<String, Object>) attributes.get("profile")),
@@ -35,7 +42,7 @@ public record KakaoOAuth2Response(
                     Boolean.valueOf(String.valueOf(attributes.get("email_needs_agreement"))),
                     Boolean.valueOf(String.valueOf(attributes.get("is_email_valid"))),
                     Boolean.valueOf(String.valueOf(attributes.get("is_email_verified"))),
-                    String.valueOf(attributes.get("email"))
+                    resolvedEmail // ✅ 안전하게 필터링된 실제 null 또는 이메일 문자열 주입
             );
         }
 
@@ -54,6 +61,13 @@ public record KakaoOAuth2Response(
         );
     }
 
-    public String email() { return this.kakaoAccount().email(); }
+    // 💡 [추가 보완] 외부에서 이메일을 꺼낼 때 한 번 더 null 및 "null" 문자열 방어막을 쳐줍니다.
+    public String email() {
+        if (this.kakaoAccount() == null || this.kakaoAccount().email() == null || "null".equals(this.kakaoAccount().email())) {
+            return null;
+        }
+        return this.kakaoAccount().email();
+    }
+
     public String nickname() { return this.kakaoAccount().nickname(); }
 }

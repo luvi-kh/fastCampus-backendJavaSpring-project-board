@@ -48,6 +48,8 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(oAuth2UserService)
                         )
+                        // 💡 이 줄을 꼭 추가해 주세요. (기존 요청을 무시하고 무조건 "/"로 이동)
+                        .defaultSuccessUrl("/", true)
                 )
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
                 .build();
@@ -89,6 +91,14 @@ public class SecurityConfig {
             String username = registrationId + "_" + providerId;
             String dummyPassword = passwordEncoder.encode("{bcrypt}" + UUID.randomUUID());
 
+            // 1. 원본 카카오 이메일을 임시 변수에 담습니다.
+            String rawEmail = kakaoResponse.kakaoAccount().email();
+            // 2. [가장 중요] 삼항 연산자를 사용하여 선언과 동시에 값을 완전히 고정(final)시킵니다.
+            // 중간에 변수 재할당(=)이 없으므로 람다식이 이 값을 완벽하게 인지합니다.
+            final String finalKakaoEmail = (rawEmail == null || rawEmail.isBlank())
+                    ? username + "@kakao.com"
+                    : rawEmail;
+
             return userAccountService.searchUser(username)
                     .map(BoardPrincipal::from)
                     .orElseGet(() ->
@@ -96,7 +106,7 @@ public class SecurityConfig {
                                     userAccountService.saveUser(
                                             username,
                                             dummyPassword,
-                                            kakaoResponse.email(),
+                                            finalKakaoEmail,
                                             kakaoResponse.nickname(),
                                             null
                                     )
