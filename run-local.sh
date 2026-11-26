@@ -20,7 +20,7 @@ fi
 echo "🎯 발견된 최신 실행 파일: $JAR_FILE"
 
 # 4. Docker MySQL 연결을 위한 환경 변수 세팅
-export LOCAL_DB_URL="jdbc:mysql://localhost:3306/board?allowPublicKeyRetrieval=true&useSSL=false"
+export LOCAL_DB_URL="jdbc:postgresql://localhost:5432/board"
 export LOCAL_DB_USERNAME="uno"
 export LOCAL_DB_PASSWORD="uno"
 
